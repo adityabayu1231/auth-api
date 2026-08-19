@@ -57,4 +57,15 @@ class AuthController extends Controller
             'message' => 'Login berhasil.',
         ]);
     }
+
+    public function logout(\Illuminate\Http\Request $request): JsonResponse
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'success' => true,
+            'data' => null,
+            'message' => 'Logout berhasil.',
+        ]);
+    }
 }
