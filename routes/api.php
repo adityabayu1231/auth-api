@@ -19,6 +19,7 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'me']);
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/ping', AdminPingController::class);
