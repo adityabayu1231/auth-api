@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Cafe extends Model
@@ -26,6 +27,13 @@ class Cafe extends Model
         'is_active' => 'boolean',
     ];
 
-    // Relasi hasMany (photo/hours/product/order) ditambahkan bertahap
-    // di task [B]-2, [B]-4, [B]-10 sesuai tasks.md
+    public function photos(): HasMany
+    {
+        return $this->hasMany(CafePhoto::class);
+    }
+
+    public function operatingHours(): HasMany
+    {
+        return $this->hasMany(CafeOperatingHour::class);
+    }
 }
