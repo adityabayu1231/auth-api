@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrderItem extends Model
 {
@@ -34,5 +35,8 @@ class OrderItem extends Model
         return $this->belongsTo(Product::class);
     }
 
-    // hasMany(OrderItemOption) ditambahkan di task B-12
+    public function options(): HasMany
+    {
+        return $this->hasMany(OrderItemOption::class);
+    }
 }
