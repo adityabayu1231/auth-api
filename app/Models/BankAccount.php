@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BankAccount extends Model
 {
@@ -15,5 +16,8 @@ class BankAccount extends Model
         'account_holder',
     ];
 
-    // hasMany(TopupRequest) ditambahkan di task B-9
+    public function topupRequests(): HasMany
+    {
+        return $this->hasMany(TopupRequest::class);
+    }
 }
