@@ -89,3 +89,27 @@ it('cafe_manager cannot update other cafe', function () {
         'name' => 'Nama Baru',
     ])->assertForbidden();
 });
+it('includes open_status in cafe list response', function () {
+    $cafe = Cafe::factory()->create();
+    \App\Models\CafeOperatingHour::factory()->create([
+        'cafe_id' => $cafe->id,
+        'day_of_week' => \Carbon\Carbon::now()->dayOfWeek === 0 ? 6 : \Carbon\Carbon::now()->dayOfWeek - 1,
+        'open_time' => '00:00:00',
+        'close_time' => '23:59:59',
+        'is_closed' => false,
+    ]);
+    /** @var \Tests\TestCase $this */
+    $response = $this->getJson('/api/cafes');
+
+    $response->assertOk()
+        ->assertJsonPath('data.items.0.open_status', 'Buka');
+});
+
+it('includes open_status Tutup when cafe has no operating hours data', function () {
+    $cafe = Cafe::factory()->create();
+    /** @var \Tests\TestCase $this */
+    $response = $this->getJson("/api/cafes/{$cafe->id}");
+
+    $response->assertOk()
+        ->assertJsonPath('data.open_status', 'Tutup');
+});

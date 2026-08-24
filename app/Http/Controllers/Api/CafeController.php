@@ -7,21 +7,35 @@ use App\Http\Requests\CreateCafeRequest;
 use App\Http\Requests\UpdateCafeRequest;
 use App\Models\Cafe;
 use App\Services\CafeService;
+use App\Services\CafeStatusService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Gate;
 
 class CafeController extends Controller
 {
-    public function __construct(private CafeService $cafeService) {}
+    public function __construct(
+        private CafeService $cafeService,
+        private CafeStatusService $cafeStatusService,
+    ) {}
 
     public function index(Request $request)
     {
         $cafes = $this->cafeService->list($request->only(['city', 'is_active', 'sort', 'per_page']));
 
+        /** @var LengthAwarePaginator $cafes */
+        $cafes->getCollection()->load('operatingHours');
+
+        $items = $cafes->getCollection()->map(function (Cafe $cafe) {
+            $data = $cafe->toArray();
+            $data['open_status'] = $this->cafeStatusService->getOpenStatus($cafe)->value;
+            return $data;
+        });
+
         return response()->json([
             'success' => true,
             'data' => [
-                'items' => $cafes->items(),
+                'items' => $items,
                 'pagination' => [
                     'current_page' => $cafes->currentPage(),
                     'per_page' => $cafes->perPage(),
@@ -35,9 +49,14 @@ class CafeController extends Controller
 
     public function show(Cafe $cafe)
     {
+        $cafe->load('operatingHours');
+
+        $data = $cafe->toArray();
+        $data['open_status'] = $this->cafeStatusService->getOpenStatus($cafe)->value;
+
         return response()->json([
             'success' => true,
-            'data' => $cafe,
+            'data' => $data,
             'message' => 'Detail cafe berhasil diambil.',
         ]);
     }
