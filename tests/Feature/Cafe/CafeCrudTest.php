@@ -3,6 +3,9 @@
 use App\Models\Cafe;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use App\Models\CafeOperatingHour;
 
 beforeEach(function () {
     Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
@@ -112,4 +115,123 @@ it('includes open_status Tutup when cafe has no operating hours data', function 
 
     $response->assertOk()
         ->assertJsonPath('data.open_status', 'Tutup');
+});
+
+it('cafe_manager can upload photo for own cafe', function () {
+    Storage::fake('public');
+
+    $cafe = Cafe::factory()->create();
+    /** @var User $manager */
+    $manager = User::factory()->create(['cafe_id' => $cafe->id]);
+    $manager->assignRole('cafe_manager');
+
+    $photo = UploadedFile::fake()->image('cafe.jpg', 800, 600)->size(500); // 500KB
+    /** @var \Tests\TestCase $this */
+    $response = $this->actingAs($manager)->postJson("/api/cafes/{$cafe->id}/photos", [
+        'photo' => $photo,
+        'sort_order' => 1,
+    ]);
+
+    $response->assertCreated()
+        ->assertJsonPath('success', true);
+
+    /** @var \Tests\TestCase $this */
+    $this->assertDatabaseHas('cafe_photos', ['cafe_id' => $cafe->id, 'sort_order' => 1]);
+
+    $storedPath = $response->json('data.photo_path');
+    Storage::disk('public')->assertExists($storedPath);
+});
+
+it('rejects photo upload exceeding size limit', function () {
+    Storage::fake('public');
+
+    $cafe = Cafe::factory()->create();
+    /** @var User $admin */
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $photo = UploadedFile::fake()->image('big.jpg')->size(3000); // 3MB > limit 2MB
+
+    /** @var \Tests\TestCase $this */
+    $this->actingAs($admin)->postJson("/api/cafes/{$cafe->id}/photos", [
+        'photo' => $photo,
+    ])->assertStatus(422);
+});
+
+it('cafe_manager cannot upload photo for other cafe', function () {
+    Storage::fake('public');
+
+    $ownCafe = Cafe::factory()->create();
+    $otherCafe = Cafe::factory()->create();
+    /** @var User $manager */
+    $manager = User::factory()->create(['cafe_id' => $ownCafe->id]);
+    $manager->assignRole('cafe_manager');
+
+    $photo = UploadedFile::fake()->image('cafe.jpg')->size(500);
+    /** @var \Tests\TestCase $this */
+    $this->actingAs($manager)->postJson("/api/cafes/{$otherCafe->id}/photos", [
+        'photo' => $photo,
+    ])->assertForbidden();
+});
+
+it('admin can update all 7 days of operating hours at once', function () {
+    $cafe = Cafe::factory()->create();
+    /** @var User $admin */
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $hours = [];
+    for ($i = 0; $i < 7; $i++) {
+        $hours[] = [
+            'day_of_week' => $i,
+            'open_time' => '08:00',
+            'close_time' => '20:00',
+            'is_closed' => false,
+        ];
+    }
+    /** @var \Tests\TestCase $this */
+    $response = $this->actingAs($admin)->putJson("/api/cafes/{$cafe->id}/operating-hours", [
+        'hours' => $hours,
+    ]);
+
+    $response->assertOk();
+    expect(CafeOperatingHour::where('cafe_id', $cafe->id)->count())->toBe(7);
+});
+
+it('rejects operating hours where close_time is before open_time', function () {
+    $cafe = Cafe::factory()->create();
+    /** @var User $admin */
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $hours = [];
+    for ($i = 0; $i < 7; $i++) {
+        $hours[] = [
+            'day_of_week' => $i,
+            'open_time' => '20:00',
+            'close_time' => '08:00', // salah, close < open
+            'is_closed' => false,
+        ];
+    }
+    /** @var \Tests\TestCase $this */
+    $this->actingAs($admin)->putJson("/api/cafes/{$cafe->id}/operating-hours", [
+        'hours' => $hours,
+    ])->assertStatus(422);
+});
+
+it('cafe_manager cannot update operating hours for other cafe', function () {
+    $ownCafe = Cafe::factory()->create();
+    $otherCafe = Cafe::factory()->create();
+    /** @var User $manager */
+    $manager = User::factory()->create(['cafe_id' => $ownCafe->id]);
+    $manager->assignRole('cafe_manager');
+
+    $hours = [];
+    for ($i = 0; $i < 7; $i++) {
+        $hours[] = ['day_of_week' => $i, 'open_time' => '08:00', 'close_time' => '20:00', 'is_closed' => false];
+    }
+    /** @var \Tests\TestCase $this */
+    $this->actingAs($manager)->putJson("/api/cafes/{$otherCafe->id}/operating-hours", [
+        'hours' => $hours,
+    ])->assertForbidden();
 });

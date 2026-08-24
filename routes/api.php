@@ -37,3 +37,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/cafes/{cafe}', [CafeController::class, 'update']);
     });
 });
+
+Route::middleware('role:admin|cafe_manager')->group(function () {
+    Route::put('/cafes/{cafe}', [CafeController::class, 'update']);
+    Route::post('/cafes/{cafe}/photos', [CafeController::class, 'uploadPhoto']);
+    Route::put('/cafes/{cafe}/operating-hours', [CafeController::class, 'updateOperatingHours']);
+});

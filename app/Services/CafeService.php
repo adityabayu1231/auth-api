@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Cafe;
+use App\Models\CafePhoto;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 class CafeService
 {
@@ -41,5 +43,31 @@ class CafeService
         $cafe->update($data);
 
         return $cafe->fresh();
+    }
+
+    public function addPhoto(Cafe $cafe, \Illuminate\Http\UploadedFile $photo, int $sortOrder = 0): CafePhoto
+    {
+        $path = $photo->store('cafe-photos', 'public');
+
+        return $cafe->photos()->create([
+            'photo_path' => $path,
+            'sort_order' => $sortOrder,
+        ]);
+    }
+
+    public function updateOperatingHours(Cafe $cafe, array $hours): Collection
+    {
+        foreach ($hours as $hour) {
+            $cafe->operatingHours()->updateOrCreate(
+                ['day_of_week' => $hour['day_of_week']],
+                [
+                    'open_time' => $hour['is_closed'] ? null : $hour['open_time'],
+                    'close_time' => $hour['is_closed'] ? null : $hour['close_time'],
+                    'is_closed' => $hour['is_closed'],
+                ]
+            );
+        }
+
+        return $cafe->operatingHours()->orderBy('day_of_week')->get();
     }
 }

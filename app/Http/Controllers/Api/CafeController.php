@@ -10,6 +10,8 @@ use App\Services\CafeService;
 use App\Services\CafeStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Http\Requests\UploadCafePhotoRequest;
+use App\Http\Requests\UpdateOperatingHoursRequest;
 use Illuminate\Support\Facades\Gate;
 
 class CafeController extends Controller
@@ -82,6 +84,36 @@ class CafeController extends Controller
             'success' => true,
             'data' => $cafe,
             'message' => 'Cafe berhasil diperbarui.',
+        ]);
+    }
+
+    public function uploadPhoto(UploadCafePhotoRequest $request, Cafe $cafe)
+    {
+        Gate::authorize('update', $cafe);
+
+        $photo = $this->cafeService->addPhoto(
+            $cafe,
+            $request->file('photo'),
+            $request->input('sort_order', 0)
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $photo,
+            'message' => 'Foto cafe berhasil diunggah.',
+        ], 201);
+    }
+
+    public function updateOperatingHours(UpdateOperatingHoursRequest $request, Cafe $cafe)
+    {
+        Gate::authorize('update', $cafe);
+
+        $hours = $this->cafeService->updateOperatingHours($cafe, $request->input('hours'));
+
+        return response()->json([
+            'success' => true,
+            'data' => $hours,
+            'message' => 'Jam operasional cafe berhasil diperbarui.',
         ]);
     }
 }
