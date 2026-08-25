@@ -51,7 +51,9 @@ class CafeController extends Controller
 
     public function show(Cafe $cafe)
     {
-        $cafe->load('operatingHours');
+        $cafe->load(['operatingHours', 'photos' => function ($query) {
+            $query->orderBy('sort_order');
+        }]);
 
         $data = $cafe->toArray();
         $data['open_status'] = $this->cafeStatusService->getOpenStatus($cafe)->value;

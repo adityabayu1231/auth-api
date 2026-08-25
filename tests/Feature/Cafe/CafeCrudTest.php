@@ -235,3 +235,16 @@ it('cafe_manager cannot update operating hours for other cafe', function () {
         'hours' => $hours,
     ])->assertForbidden();
 });
+
+it('includes photos and operating hours in cafe detail response', function () {
+    $cafe = Cafe::factory()->create();
+    \App\Models\CafePhoto::factory()->count(2)->create(['cafe_id' => $cafe->id]);
+    CafeOperatingHour::factory()->create(['cafe_id' => $cafe->id, 'day_of_week' => 0]);
+
+    /** @var \Tests\TestCase $this */
+    $response = $this->getJson("/api/cafes/{$cafe->id}");
+
+    $response->assertOk()
+        ->assertJsonCount(2, 'data.photos')
+        ->assertJsonCount(1, 'data.operating_hours');
+});
