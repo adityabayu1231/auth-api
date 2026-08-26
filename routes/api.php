@@ -22,6 +22,8 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])
 
 Route::get('/cafes', [CafeController::class, 'index']);
 Route::get('/cafes/{cafe}', [CafeController::class, 'show']);
+Route::get('/cafes/{cafe}/products', [ProductController::class, 'indexByCafe']);
+Route::get('/products/{product}', [ProductController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);

@@ -21,7 +21,7 @@ class ProductService
         return $product->fresh();
     }
 
-    public function listByCafe(int $cafeId, bool $onlyAvailable = true): LengthAwarePaginator
+    public function listByCafe(int $cafeId, bool $onlyAvailable = true, int $perPage = 15): LengthAwarePaginator
     {
         $query = Product::where('cafe_id', $cafeId);
 
@@ -29,6 +29,6 @@ class ProductService
             $query->where('is_available', true);
         }
 
-        return $query->orderBy('created_at', 'desc')->paginate(15);
+        return $query->orderBy('created_at', 'desc')->paginate(min($perPage, 50));
     }
 }
