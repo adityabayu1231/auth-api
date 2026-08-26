@@ -2,13 +2,15 @@
 
 use App\Http\Controllers\Api\AdminPingController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CafeController;
+use App\Http\Controllers\Api\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\CafeController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
 Route::post('/register', [AuthController::class, 'register'])
     ->middleware('throttle:6,1');
 
@@ -27,19 +29,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/ping', AdminPingController::class);
-    });
-
-    Route::middleware('role:admin')->group(function () {
         Route::post('/cafes', [CafeController::class, 'store']);
     });
 
     Route::middleware('role:admin|cafe_manager')->group(function () {
         Route::put('/cafes/{cafe}', [CafeController::class, 'update']);
-    });
-});
+        Route::post('/cafes/{cafe}/photos', [CafeController::class, 'uploadPhoto']);
+        Route::put('/cafes/{cafe}/operating-hours', [CafeController::class, 'updateOperatingHours']);
 
-Route::middleware('role:admin|cafe_manager')->group(function () {
-    Route::put('/cafes/{cafe}', [CafeController::class, 'update']);
-    Route::post('/cafes/{cafe}/photos', [CafeController::class, 'uploadPhoto']);
-    Route::put('/cafes/{cafe}/operating-hours', [CafeController::class, 'updateOperatingHours']);
+        Route::post('/products', [ProductController::class, 'store']);
+        Route::put('/products/{product}', [ProductController::class, 'update']);
+    });
 });
