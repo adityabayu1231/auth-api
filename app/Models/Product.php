@@ -25,6 +25,7 @@ class Product extends Model
 
     protected $casts = [
         'base_price' => 'integer',
+        'service_time_minutes' => 'integer',
         'is_available' => 'boolean',
     ];
 
