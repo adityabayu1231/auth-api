@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AddProductOptionsRequest;
 use App\Http\Requests\CreateProductRequest;
+use App\Http\Requests\UpdateProductOptionRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Product;
+use App\Models\ProductOption;
+use App\Services\ProductOptionService;
 use App\Services\ProductService;
 use Illuminate\Support\Facades\Gate;
 
@@ -13,6 +17,7 @@ class ProductController extends Controller
 {
     public function __construct(
         private ProductService $productService,
+        private ProductOptionService $productOptionService,
     ) {}
 
     public function store(CreateProductRequest $request)
@@ -36,6 +41,34 @@ class ProductController extends Controller
             'success' => true,
             'data' => $product,
             'message' => 'Produk berhasil diperbarui.',
+        ]);
+    }
+
+    public function addOptions(AddProductOptionsRequest $request, Product $product)
+    {
+        Gate::authorize('update', $product);
+
+        $options = $this->productOptionService->addOptions($product, $request->validated()['options']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $options,
+            'message' => 'Opsi produk berhasil ditambahkan.',
+        ], 201);
+    }
+
+    public function updateOption(UpdateProductOptionRequest $request, ProductOption $productOption)
+    {
+        $product = $productOption->product;
+
+        Gate::authorize('update', $product);
+
+        $option = $this->productOptionService->updateOption($productOption, $request->validated());
+
+        return response()->json([
+            'success' => true,
+            'data' => $option,
+            'message' => 'Opsi produk berhasil diperbarui.',
         ]);
     }
 }
