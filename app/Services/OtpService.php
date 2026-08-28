@@ -16,7 +16,7 @@ class OtpService
         $otp = OtpCode::create([
             'user_id' => $user->id,
             'code' => $code,
-            'expires_at' => Carbon::now()->addMinutes(10),
+            'expires_at' => Carbon::now()->addMinutes(5),
         ]);
 
         $user->notify(new SendOtpNotification($code));

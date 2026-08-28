@@ -20,8 +20,8 @@ it('generates a 6 digit otp code with 10 minute expiry', function () {
     expect($otp->used_at)->toBeNull();
 
     $diffInMinutes = now()->diffInMinutes($otp->expires_at, absolute: true);
-    expect($diffInMinutes)->toBeLessThanOrEqual(10)
-        ->and($diffInMinutes)->toBeGreaterThan(9);
+    expect($diffInMinutes)->toBeLessThanOrEqual(5)
+        ->and($diffInMinutes)->toBeGreaterThan(4);
 });
 
 it('sends the otp notification to the user without exposing code in response', function () {

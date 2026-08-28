@@ -1,10 +1,11 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Artisan;
 use Spatie\Permission\Models\Role;
 
 it('seeds the three base roles', function () {
-    $this->seed();
+    Artisan::call('db:seed');
 
     expect(Role::pluck('name')->sort()->values()->all())
         ->toBe(['admin', 'cafe_manager', 'customer']);
