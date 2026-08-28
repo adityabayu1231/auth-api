@@ -21,12 +21,19 @@ class CafeService
             $query->where('is_active', $filters['is_active']);
         }
 
+        $allowedSortColumns = ['name', 'city', 'created_at'];
         $sort = $filters['sort'] ?? '-created_at';
         $direction = str_starts_with($sort, '-') ? 'desc' : 'asc';
         $column = ltrim($sort, '-');
+
+        if (! in_array($column, $allowedSortColumns, true)) {
+            $column = 'created_at';
+            $direction = 'desc';
+        }
+
         $query->orderBy($column, $direction);
 
-        $perPage = min((int) ($filters['per_page'] ?? 15), 50);
+        $perPage = max(1, min((int) ($filters['per_page'] ?? 15), 50));
 
         return $query->paginate($perPage);
     }

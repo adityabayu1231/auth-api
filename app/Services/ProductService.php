@@ -29,6 +29,7 @@ class ProductService
             $query->where('is_available', true);
         }
 
-        return $query->orderBy('created_at', 'desc')->paginate(min($perPage, 50));
+        $perPage = max(1, min($perPage, 50));
+        return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }
 }
