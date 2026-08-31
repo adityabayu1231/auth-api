@@ -28,6 +28,10 @@ it('registers a new user with customer role', function () {
     expect($user)->not->toBeNull();
     expect($user->hasRole('customer'))->toBeTrue();
     expect(\Illuminate\Support\Facades\Hash::check('password123', $user->password))->toBeTrue();
+
+    $wallet = \App\Models\Wallet::where('user_id', $user->id)->first();
+    expect($wallet)->not->toBeNull();
+    expect($wallet->balance)->toBe(0);
 });
 
 it('rejects registration with duplicate email', function () {
@@ -42,4 +46,20 @@ it('rejects registration with duplicate email', function () {
 
     $response->assertStatus(422)
         ->assertJsonValidationErrors(['email']);
+});
+
+it('creates a wallet with zero balance when a user registers', function () {
+    postJson('/api/register', [
+        'name' => 'Wallet Test User',
+        'email' => 'wallettest@example.com',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+    ]);
+
+    $user = User::where('email', 'wallettest@example.com')->first();
+    $wallet = $user->wallet;
+
+    expect($wallet)->not->toBeNull();
+    expect($wallet->balance)->toBe(0);
+    expect($wallet->user_id)->toBe($user->id);
 });
