@@ -3,10 +3,15 @@
 namespace App\Services;
 
 use App\Exceptions\ProductUnavailableException;
+use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class OrderService
 {
+    public function __construct(protected WalletService $walletService) {}
+
     /**
      * Hitung ulang total harga dari DB — tidak pernah percaya harga dari client.
      *
@@ -62,5 +67,43 @@ class OrderService
             'total_amount' => $totalAmount,
             'items' => $breakdown,
         ];
+    }
+
+    /**
+     * Buat order baru: hitung total, validasi saldo, insert snapshot, potong wallet.
+     * Semua dalam satu transaksi DB — gagal di titik mana pun akan rollback penuh.
+     */
+    public function create(User $user, int $cafeId, array $items, ?string $notes = null): Order
+    {
+        return DB::transaction(function () use ($user, $cafeId, $items, $notes) {
+            $calculation = $this->calculateTotal($items, $cafeId);
+
+            $order = Order::create([
+                'user_id' => $user->id,
+                'cafe_id' => $cafeId,
+                'status' => 'pending',
+                'total_amount' => $calculation['total_amount'],
+                'notes' => $notes,
+            ]);
+
+            foreach ($calculation['items'] as $itemData) {
+                $orderItem = $order->items()->create([
+                    'product_id' => $itemData['product']->id,
+                    'quantity' => $itemData['quantity'],
+                    'unit_price' => $itemData['unit_price'],
+                    'subtotal' => $itemData['subtotal'],
+                ]);
+
+                foreach ($itemData['options'] as $option) {
+                    $orderItem->options()->create($option);
+                }
+            }
+
+            // Potong saldo wallet — kalau saldo tidak cukup, exception di sini
+            // otomatis rollback semua insert Order/OrderItem/OrderItemOption di atas.
+            $this->walletService->pay($user, $order, $calculation['total_amount']);
+
+            return $order->fresh('items.options');
+        });
     }
 }
