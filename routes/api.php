@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AdminPingController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CafeController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -43,5 +44,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/products/{product}', [ProductController::class, 'update']);
         Route::post('/products/{product}/options', [ProductController::class, 'addOptions']);
         Route::put('/product-options/{productOption}', [ProductController::class, 'updateOption']);
+    });
+
+    Route::middleware('role:customer')->group(function () {
+        Route::post('/orders', [OrderController::class, 'store']);
     });
 });
