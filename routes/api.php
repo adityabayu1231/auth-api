@@ -51,4 +51,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:customer')->group(function () {
         Route::post('/orders', [OrderController::class, 'store']);
     });
+
+    Route::middleware('role:customer|admin')->group(function () {
+        Route::patch('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+    });
 });

@@ -15,4 +15,13 @@ class OrderPolicy
 
         return $user->hasRole('cafe_manager') && $user->cafe_id === $order->cafe_id;
     }
+
+    public function cancel(User $user, Order $order): bool
+    {
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        return $user->hasRole('customer') && $user->id === $order->user_id;
+    }
 }

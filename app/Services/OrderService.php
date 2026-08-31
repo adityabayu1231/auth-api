@@ -132,4 +132,23 @@ class OrderService
 
         return $order->fresh();
     }
+
+    private const CANCELLABLE_STATUSES = ['pending', 'preparing'];
+
+    public function cancel(Order $order): Order
+    {
+        if (! in_array($order->status, self::CANCELLABLE_STATUSES, true)) {
+            throw new InvalidOrderStatusTransitionException(
+                "Order dengan status '{$order->status}' tidak bisa dibatalkan."
+            );
+        }
+
+        return DB::transaction(function () use ($order) {
+            $order->update(['status' => 'cancelled']);
+
+            $this->walletService->refund($order->user, $order, $order->total_amount);
+
+            return $order->fresh();
+        });
+    }
 }

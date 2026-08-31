@@ -43,4 +43,17 @@ class OrderController extends Controller
             'message' => 'Status order berhasil diperbarui.',
         ]);
     }
+
+    public function cancel(Order $order)
+    {
+        Gate::authorize('cancel', $order);
+
+        $order = $this->orderService->cancel($order);
+
+        return response()->json([
+            'success' => true,
+            'data' => $order,
+            'message' => 'Order berhasil dibatalkan.',
+        ]);
+    }
 }

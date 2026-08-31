@@ -241,4 +241,68 @@ class OrderServiceTest extends TestCase
         $this->expectException(\App\Exceptions\InvalidOrderStatusTransitionException::class);
         $service->updateStatus($order, 'preparing');
     }
+
+    public function test_cancel_refunds_wallet_and_sets_status_cancelled(): void
+    {
+        $user = User::factory()->create();
+        Wallet::where('user_id', $user->id)->update(['balance' => 15000]);
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'pending',
+            'total_amount' => 35000,
+        ]);
+
+        $service = $this->makeService();
+        $cancelled = $service->cancel($order);
+
+        $this->assertEquals('cancelled', $cancelled->status);
+        $this->assertEquals(50000, $user->wallet->fresh()->balance);
+        $this->assertDatabaseHas('wallet_transactions', [
+            'type' => 'refund',
+            'amount' => 35000,
+            'reference_type' => 'order',
+            'reference_id' => $order->id,
+            'balance_after' => 50000,
+        ]);
+    }
+
+    public function test_cancel_works_from_preparing_status(): void
+    {
+        $user = User::factory()->create();
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'preparing',
+            'total_amount' => 20000,
+        ]);
+
+        $service = $this->makeService();
+        $cancelled = $service->cancel($order);
+
+        $this->assertEquals('cancelled', $cancelled->status);
+    }
+
+    public function test_cancel_rejects_finished_order(): void
+    {
+        $order = Order::factory()->create(['status' => 'finished']);
+        $service = $this->makeService();
+
+        $this->expectException(\App\Exceptions\InvalidOrderStatusTransitionException::class);
+        $service->cancel($order);
+    }
+
+    public function test_cancel_rejects_already_cancelled_order_to_prevent_double_refund(): void
+    {
+        $user = User::factory()->create();
+        $initialBalance = $user->wallet->balance;
+        $order = Order::factory()->create(['user_id' => $user->id, 'status' => 'cancelled']);
+
+        $service = $this->makeService();
+
+        try {
+            $service->cancel($order);
+            $this->fail('Expected InvalidOrderStatusTransitionException was not thrown.');
+        } catch (\App\Exceptions\InvalidOrderStatusTransitionException $e) {
+            $this->assertEquals($initialBalance, $user->wallet->fresh()->balance);
+        }
+    }
 }
