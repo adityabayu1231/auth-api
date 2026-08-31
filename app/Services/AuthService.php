@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\User;
-use App\Models\Wallet;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -23,11 +22,6 @@ class AuthService
                 'phone' => $data['phone'] ?? null,
             ]);
             $user->assignRole('customer');
-
-            Wallet::create([
-                'user_id' => $user->id,
-                'balance' => 0,
-            ]);
 
             return $user;
         });

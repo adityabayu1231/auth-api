@@ -95,7 +95,7 @@ class DatabaseFoundationIntegrationTest extends TestCase
             'account_holder' => 'Test',
         ]);
 
-        $wallet = $user->wallet()->create(['balance' => 0]);
+        $wallet = $user->wallet;
 
         $transaction = $wallet->transactions()->create([
             'type' => 'topup',
