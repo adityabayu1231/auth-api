@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\InvalidOrderStatusTransitionException;
 use App\Exceptions\ProductUnavailableException;
 use App\Models\Order;
 use App\Models\Product;
@@ -105,5 +106,30 @@ class OrderService
 
             return $order->fresh('items.options');
         });
+    }
+
+    /**
+     * Transisi status valid: pending -> preparing -> finished.
+     * Pembatalan (-> cancelled) ditangani terpisah lewat cancel() (lihat [B]-8).
+     */
+    private const ALLOWED_TRANSITIONS = [
+        'pending' => ['preparing'],
+        'preparing' => ['finished'],
+    ];
+
+    public function updateStatus(Order $order, string $newStatus): Order
+    {
+        $currentStatus = $order->status;
+        $allowedNext = self::ALLOWED_TRANSITIONS[$currentStatus] ?? [];
+
+        if (! in_array($newStatus, $allowedNext, true)) {
+            throw new InvalidOrderStatusTransitionException(
+                "Tidak bisa mengubah status order dari '{$currentStatus}' ke '{$newStatus}'."
+            );
+        }
+
+        $order->update(['status' => $newStatus]);
+
+        return $order->fresh();
     }
 }

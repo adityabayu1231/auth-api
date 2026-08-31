@@ -203,4 +203,42 @@ class OrderServiceTest extends TestCase
             $this->assertEquals(100000, $user->wallet->fresh()->balance);
         }
     }
+
+    public function test_update_status_allows_pending_to_preparing(): void
+    {
+        $order = \App\Models\Order::factory()->create(['status' => 'pending']);
+        $service = $this->makeService();
+
+        $updated = $service->updateStatus($order, 'preparing');
+
+        $this->assertEquals('preparing', $updated->status);
+    }
+
+    public function test_update_status_allows_preparing_to_finished(): void
+    {
+        $order = \App\Models\Order::factory()->create(['status' => 'preparing']);
+        $service = $this->makeService();
+
+        $updated = $service->updateStatus($order, 'finished');
+
+        $this->assertEquals('finished', $updated->status);
+    }
+
+    public function test_update_status_rejects_pending_to_finished_directly(): void
+    {
+        $order = \App\Models\Order::factory()->create(['status' => 'pending']);
+        $service = $this->makeService();
+
+        $this->expectException(\App\Exceptions\InvalidOrderStatusTransitionException::class);
+        $service->updateStatus($order, 'finished');
+    }
+
+    public function test_update_status_rejects_transition_from_finished(): void
+    {
+        $order = \App\Models\Order::factory()->create(['status' => 'finished']);
+        $service = $this->makeService();
+
+        $this->expectException(\App\Exceptions\InvalidOrderStatusTransitionException::class);
+        $service->updateStatus($order, 'preparing');
+    }
 }
