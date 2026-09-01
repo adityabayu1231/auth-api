@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\CafeController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\WalletController;
+use App\Http\Controllers\Api\BankAccountController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +41,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', fn(Request $request) => $request->user());
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // --- Bank accounts: read-only, semua user login boleh lihat ---
+    Route::get('/bank-accounts', [BankAccountController::class, 'index']);
 
     // --- Wallet: setiap user yang login lihat wallet miliknya sendiri ---
     Route::prefix('wallet')->group(function () {
@@ -85,6 +89,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/ping', AdminPingController::class);
 
         Route::prefix('admin/topup-requests')->group(function () {
+            Route::get('/', [TopupRequestController::class, 'index']);
             Route::patch('/{topupRequest}/approve', [TopupRequestController::class, 'approve']);
             Route::patch('/{topupRequest}/reject', [TopupRequestController::class, 'reject']);
         });

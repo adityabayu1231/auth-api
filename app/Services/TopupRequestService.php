@@ -80,4 +80,15 @@ class TopupRequestService
 
         return $code;
     }
+
+    public function listByStatus(?string $status, int $perPage = 15)
+    {
+        $query = TopupRequest::query()->orderByDesc('created_at');
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        return $query->paginate($perPage);
+    }
 }
