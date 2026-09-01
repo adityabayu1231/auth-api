@@ -7,11 +7,46 @@ use App\Http\Requests\CreateOrderRequest;
 use App\Http\Requests\UpdateOrderStatusRequest;
 use App\Models\Order;
 use App\Services\OrderService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class OrderController extends Controller
 {
     public function __construct(private OrderService $orderService) {}
+
+    public function index(Request $request)
+    {
+        $perPage = max(1, min((int) $request->input('per_page', 15), 50));
+
+        $orders = $this->orderService->listByUser($request->user()->id, $perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'items' => $orders->items(),
+                'pagination' => [
+                    'current_page' => $orders->currentPage(),
+                    'per_page' => $orders->perPage(),
+                    'total' => $orders->total(),
+                    'last_page' => $orders->lastPage(),
+                ],
+            ],
+            'message' => 'Riwayat order berhasil diambil.',
+        ]);
+    }
+
+    public function show(Order $order)
+    {
+        Gate::authorize('view', $order);
+
+        $order->load('items.options');
+
+        return response()->json([
+            'success' => true,
+            'data' => $order,
+            'message' => 'Detail order berhasil diambil.',
+        ]);
+    }
 
     public function store(CreateOrderRequest $request)
     {

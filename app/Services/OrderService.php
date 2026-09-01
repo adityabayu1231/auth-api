@@ -151,4 +151,11 @@ class OrderService
             return $order->fresh();
         });
     }
+
+    public function listByUser(int $userId, int $perPage = 15)
+    {
+        return Order::where('user_id', $userId)
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
+    }
 }
