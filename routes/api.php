@@ -41,7 +41,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // --- Wallet: setiap user yang login lihat wallet miliknya sendiri ---
-    Route::get('/wallet', [WalletController::class, 'show']);
+    Route::prefix('wallet')->group(function () {
+        Route::get('/', [WalletController::class, 'show']);
+        Route::post('/topup-request', [WalletController::class, 'storeTopupRequest']);
+    });
 
     // --- Cafe management: admin & cafe_manager ---
     Route::middleware('role:admin|cafe_manager')->prefix('cafes')->group(function () {
