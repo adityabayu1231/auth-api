@@ -58,4 +58,19 @@ class WalletService
             return $transaction;
         });
     }
+
+    public function getBalanceAndHistory(User $user, int $perPage = 15): array
+    {
+        $wallet = Wallet::where('user_id', $user->id)->firstOrFail();
+
+        $transactions = $wallet->transactions()
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage);
+
+        return [
+            'balance' => $wallet->balance,
+            'transactions' => $transactions,
+        ];
+    }
 }

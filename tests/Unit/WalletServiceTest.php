@@ -69,4 +69,22 @@ class WalletServiceTest extends TestCase
             'balance_after' => 40000,
         ]);
     }
+
+    public function test_get_balance_and_history_returns_correct_balance_and_ordered_transactions(): void
+    {
+        $user = User::factory()->create();
+        Wallet::where('user_id', $user->id)->update(['balance' => 75000]);
+        $order = Order::factory()->create(['user_id' => $user->id]);
+
+        $service = new WalletService();
+        $service->pay($user, $order, 25000);
+        $service->refund($user, $order, 10000);
+
+        $result = $service->getBalanceAndHistory($user);
+
+        $this->assertEquals(60000, $result['balance']);
+        $this->assertEquals(2, $result['transactions']->total());
+        // Urutan terbaru duluan: refund (transaksi kedua) harus muncul lebih dulu
+        $this->assertEquals('refund', $result['transactions']->items()[0]->type);
+    }
 }
