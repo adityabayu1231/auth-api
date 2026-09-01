@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\TopupRequestController;
 use App\Http\Controllers\Api\AdminPingController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CafeController;
@@ -80,5 +81,12 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // --- Admin only ---
-    Route::middleware('role:admin')->get('/admin/ping', AdminPingController::class);
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/admin/ping', AdminPingController::class);
+
+        Route::prefix('admin/topup-requests')->group(function () {
+            Route::patch('/{topupRequest}/approve', [TopupRequestController::class, 'approve']);
+            Route::patch('/{topupRequest}/reject', [TopupRequestController::class, 'reject']);
+        });
+    });
 });

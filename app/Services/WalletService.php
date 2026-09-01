@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\InsufficientBalanceException;
 use App\Models\Order;
+use App\Models\TopupRequest;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
@@ -72,5 +73,27 @@ class WalletService
             'balance' => $wallet->balance,
             'transactions' => $transactions,
         ];
+    }
+
+    public function topup(User $user, TopupRequest $topupRequest, int $amount): WalletTransaction
+    {
+        return DB::transaction(function () use ($user, $topupRequest, $amount) {
+            $wallet = Wallet::where('user_id', $user->id)->lockForUpdate()->firstOrFail();
+
+            $balanceAfter = $wallet->balance + $amount;
+
+            $transaction = WalletTransaction::create([
+                'wallet_id' => $wallet->id,
+                'type' => 'topup',
+                'amount' => $amount,
+                'reference_type' => 'topup_request',
+                'reference_id' => $topupRequest->id,
+                'balance_after' => $balanceAfter,
+            ]);
+
+            $wallet->update(['balance' => $balanceAfter]);
+
+            return $transaction;
+        });
     }
 }

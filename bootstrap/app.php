@@ -109,6 +109,16 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        $exceptions->render(function (\App\Exceptions\TopupRequestAlreadyProcessedException $e, $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => [],
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+        });
+
         $exceptions->render(function (\Throwable $e, $request) {
             if ($request->is('api/*') && ! config('app.debug')) {
                 return response()->json([
